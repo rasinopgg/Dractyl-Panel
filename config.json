@@ -1,0 +1,14 @@
+{
+  "baseUri": "http://localhost:8025",
+  "port": 8025,
+  "session_secret": "4»)ÏE\u001c\u0015FÓÆ=*\u000e9)",
+  "domain": "localhost",
+  "mode": "production",
+  "version": "2.0.0",
+  "note": "Drayctyl Panel v2.0 Config - you can also use Mysql if you put mysql://user:pass@localhost:3306/dbname into databaseURL!",
+  "databaseURL": "sqlite://drayctyl.db",
+  "databaseTable": "drayctyl",
+  "saltRounds": 12,
+  "ogTitle": "Drayctyl Panel",
+  "ogDescription": "This is an instance of the Drayctyl Panel - A Premium Minecraft Server Management System by MrDraynoX"
+}
