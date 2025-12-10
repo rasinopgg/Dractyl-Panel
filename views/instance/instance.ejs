@@ -1,0 +1,595 @@
+<%- include('../components/template') %>
+<script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xterm/3.14.5/xterm.min.js"
+    integrity="sha512-2PRgAav8Os8vLcOAh1gSaDoNLe1fAyq8/G3QSdyjFFD+OqNjLeHE/8q4+S4MEZgPsuo+itHopj+hJvqS8XUQ8A=="
+    crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/xterm/3.14.5/xterm.min.css"
+    integrity="sha512-iLYuqv+v/P4u9erpk+KM83Ioe/l7SEmr7wB6g+Kg1qmEit8EShDKnKtLHlv2QXUp7GGJhmqDI+1PhJYLTsfb8w=="
+    crossorigin="anonymous" referrerpolicy="no-referrer" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xterm/3.14.5/addons/attach/attach.min.js"
+    integrity="sha512-43J76SR5UijcuJTzs73z8NpkyWon8a8EoV+dX6obqXW7O26Yb268H2vP6EiJjD7sWXqxS3G/YOqPyyLF9fmqgA=="
+    crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xterm/3.14.5/addons/fit/fit.min.js"
+    integrity="sha512-+wh8VA1djpWk3Dj9/IJDu6Ufi4vVQ0zxLv9Vmfo70AbmYFJm0z3NLnV98vdRKBdPDV4Kwpi7EZdr8mDY9L8JIA=="
+    crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
+<style>
+    canvas {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100% !important;
+        height: 100% !important;
+    }
+
+    .xterm-viewport {
+        overflow-y: hidden !important;
+    }
+</style>
+    <!-- Desktop Container Restriction -->
+    <div class="w-[1440px] mx-auto" id="content">
+    <% if (!readEula) { %>
+        <% if (instance.imageData.features && instance.imageData.features.includes('eula')) { %>
+            <div class="fixed inset-0 flex items-center justify-center bg-black/70 backdrop-blur-md z-50">
+                <div class="glass-panel p-8 rounded-2xl w-1/2 h-48">
+                    <p class="text-white text-lg font-medium">Do you accept Minecraft's EULA?</p>
+                    <p class="text-sm text-gray-400">By pressing this button you agree to the <a class="text-gold-500" href="https://account.mojang.com/documents/minecraft_eula">Mojang EULA</a>.</p>
+                    <button
+                    onclick="axios.post('/instance/<%= req.params.id %>/imagefeatures/eula')
+                        .then(response => {
+                            if (response.status === 200) {
+                                location.reload();
+                            }
+                        })
+                        .catch(error => {
+                            console.error('There was an error!', error);
+                        });"
+                    class="mt-8 bg-gold-600 hover:bg-gold-500 text-black font-bold py-2 px-6 rounded-lg transition-colors">
+                    I agree
+                    </button>
+                </div>
+            </div>
+        <% } %>
+    <% } %>
+
+    <!-- Daemon Down Alert -->
+    <div id="daemonIsDown" class="hidden fixed inset-0 flex items-center justify-center bg-black/70 backdrop-blur-md z-50">
+        <div class="glass-panel p-8 rounded-2xl w-1/2">
+            <p class="text-white text-lg font-medium">Server Connection Lost</p>
+            <p class="text-sm text-gray-400 mt-2">The connection to the server has been lost. Please try refreshing the page.</p>
+            <button onclick="location.reload()" class="mt-6 bg-gold-600 hover:bg-gold-500 text-black font-bold py-2 px-6 rounded-lg transition-colors">
+                Refresh
+            </button>
+        </div>
+    </div>
+
+    <!-- Header -->
+    <header class="h-20 flex items-center justify-between px-8 sticky top-0 z-10 backdrop-blur-md bg-dark-900/80 border-b border-gold-600/10">
+        <!-- Breadcrumbs -->
+        <div class="flex items-center text-sm text-gray-400">
+            <span class="hover:text-gold-500 cursor-pointer">Servers</span>
+            <span class="mx-2 text-gray-600">/</span>
+            <span class="text-white font-medium"><%= instance.Name %></span>
+            <span class="ml-3 px-2 py-0.5 rounded text-[10px] bg-green-500/10 text-green-400 border border-green-500/20">RUNNING</span>
+        </div>
+
+        <!-- Right Actions -->
+        <div class="flex items-center gap-6">
+            <div class="relative">
+                <input type="text" placeholder="Search logs..." class="bg-dark-800 border border-dark-border rounded-full py-1.5 px-4 text-sm text-gray-300 focus:outline-none focus:border-gold-500 focus:ring-1 focus:ring-gold-500 w-64">
+                <i class="fa-solid fa-magnifying-glass absolute right-3 top-2.5 text-gray-500 text-xs"></i>
+            </div>
+
+            <div class="relative cursor-pointer">
+                <i class="fa-regular fa-bell text-gray-400 hover:text-gold-500 transition-colors"></i>
+                <span class="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+            </div>
+
+            <div class="flex items-center gap-3 pl-6 border-l border-dark-border/50">
+                <div class="text-right hidden sm:block">
+                    <div class="text-sm font-medium text-white"><%= user.username %></div>
+                    <div class="text-xs text-gold-500">Owner</div>
+                </div>
+                <img class="w-9 h-9 rounded-full border border-gold-500/50" src="https://api.dicebear.com/9.x/thumbs/svg?seed=<%= user.username %>" alt="Avatar">
+            </div>
+        </div>
+    </header>
+
+    <!-- Dashboard Content -->
+    <div class="p-8 space-y-6">
+
+        <!-- Stats Row -->
+        <div class="grid grid-cols-4 gap-6">
+            <!-- CPU Card -->
+            <div class="glass-panel p-5 rounded-xl flex items-center justify-between group hover:border-gold-500/40 transition-all">
+                <div>
+                    <p class="text-gray-400 text-xs uppercase font-bold tracking-wider mb-1">CPU Load</p>
+                    <h3 class="text-2xl font-mono text-white font-bold" id="cpuUsage">...</h3>
+                    <p class="text-xs text-gray-500 mt-1">i9-12900K</p>
+                </div>
+                <div class="w-12 h-12 rounded-full bg-gold-900/10 flex items-center justify-center border border-gold-500/20 group-hover:bg-gold-500 group-hover:text-black transition-all">
+                    <i class="fa-solid fa-microchip text-gold-500 group-hover:text-black transition-colors"></i>
+                </div>
+            </div>
+
+            <!-- RAM Card -->
+            <div class="glass-panel p-5 rounded-xl flex items-center justify-between group hover:border-gold-500/40 transition-all">
+                <div>
+                    <p class="text-gray-400 text-xs uppercase font-bold tracking-wider mb-1">Memory</p>
+                    <h3 class="text-2xl font-mono text-white font-bold" id="ramUsage">...</h3>
+                    <p class="text-xs text-gray-500 mt-1">of <%= instance.Memory %> MB Allocated</p>
+                </div>
+                <div class="w-12 h-12 rounded-full bg-gold-900/10 flex items-center justify-center border border-gold-500/20 group-hover:bg-gold-500 group-hover:text-black transition-all">
+                    <i class="fa-solid fa-memory text-gold-500 group-hover:text-black transition-colors"></i>
+                </div>
+            </div>
+
+            <!-- Disk Card -->
+            <div class="glass-panel p-5 rounded-xl flex items-center justify-between group hover:border-gold-500/40 transition-all">
+                <div>
+                    <p class="text-gray-400 text-xs uppercase font-bold tracking-wider mb-1">Storage</p>
+                    <h3 class="text-2xl font-mono text-white font-bold" id="diskUsage">...</h3>
+                    <p class="text-xs text-gray-500 mt-1">NVMe SSD</p>
+                </div>
+                <div class="w-12 h-12 rounded-full bg-gold-900/10 flex items-center justify-center border border-gold-500/20 group-hover:bg-gold-500 group-hover:text-black transition-all">
+                    <i class="fa-solid fa-hard-drive text-gold-500 group-hover:text-black transition-colors"></i>
+                </div>
+            </div>
+
+            <!-- Uptime Card -->
+            <div class="glass-panel p-5 rounded-xl flex items-center justify-between group hover:border-gold-500/40 transition-all">
+                <div>
+                    <p class="text-gray-400 text-xs uppercase font-bold tracking-wider mb-1">Uptime</p>
+                    <h3 class="text-2xl font-mono text-white font-bold" id="uptime">4d 12h</h3>
+                    <p class="text-xs text-green-400 mt-1" id="status">Currently Online</p>
+                </div>
+                <div class="w-12 h-12 rounded-full bg-green-900/10 flex items-center justify-center border border-green-500/20 group-hover:bg-green-500 group-hover:text-black transition-all">
+                    <i class="fa-solid fa-clock text-green-500 group-hover:text-black transition-colors"></i>
+                </div>
+            </div>
+        </div>
+        <!-- Console & Controls Section -->
+        <div class="grid grid-cols-3 gap-6 h-[500px] mt-8">
+
+            <!-- Console/Terminal (Left 2 cols) -->
+            <div class="col-span-2 glass-panel rounded-xl flex flex-col p-1">
+                <div class="h-10 bg-dark-800 rounded-t-lg flex items-center justify-between px-4 border-b border-dark-border">
+                    <span class="text-xs font-mono text-gold-500">server_console.log</span>
+                    <div class="flex gap-2">
+                        <span class="w-3 h-3 rounded-full bg-red-500/20 border border-red-500"></span>
+                        <span class="w-3 h-3 rounded-full bg-yellow-500/20 border border-yellow-500"></span>
+                        <span class="w-3 h-3 rounded-full bg-green-500/20 border border-green-500"></span>
+                    </div>
+                </div>
+
+                <!-- Terminal Output -->
+                <div class="flex-1 bg-black/50 overflow-y-auto p-1" id="terminal">
+                </div>
+
+                <!-- Terminal Input & Actions -->
+                <div class="h-14 bg-dark-800 rounded-b-lg p-2 flex gap-2">
+                    <div class="flex-1 relative">
+                        <i class="fa-solid fa-chevron-right absolute left-3 top-3 text-gold-500 text-xs"></i>
+                        <input type="text" id="input" autocomplete="off" placeholder="Type a command..." class="w-full h-full bg-black/40 border border-dark-border rounded px-8 text-sm text-white focus:outline-none focus:border-gold-500/50 font-mono">
+                    </div>
+                    <button id="sendButton" class="bg-gold-600 hover:bg-gold-500 text-black font-bold py-2 px-6 rounded transition-colors text-sm">Send</button>
+                </div>
+            </div>
+
+            <!-- Right Controls & Mini Graphs -->
+            <div class="col-span-1 flex flex-col gap-6">
+
+                <!-- Power Controls -->
+                <div class="glass-panel p-5 rounded-xl">
+                    <h4 class="text-sm text-gray-400 font-bold uppercase mb-4">Power Actions</h4>
+                    <div class="grid grid-cols-3 gap-3">
+                        <button id="startButton" class="flex flex-col items-center justify-center p-3 rounded bg-green-500/10 border border-green-500/30 hover:bg-green-500 hover:text-black text-green-500 transition-all group">
+                            <i class="fa-solid fa-play mb-1"></i>
+                            <span class="text-[10px] font-bold">Start</span>
+                        </button>
+                        <button id="restartButton" class="flex flex-col items-center justify-center p-3 rounded bg-gold-900/10 border border-gold-500/30 hover:bg-gold-500 hover:text-black text-gold-500 transition-all group">
+                            <i class="fa-solid fa-rotate-right mb-1"></i>
+                            <span class="text-[10px] font-bold">Restart</span>
+                        </button>
+                        <button id="stopButton" class="flex flex-col items-center justify-center p-3 rounded bg-red-500/10 border border-red-500/30 hover:bg-red-500 hover:text-white text-red-500 transition-all group">
+                            <i class="fa-solid fa-square mb-1"></i>
+                            <span class="text-[10px] font-bold">Stop</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Real-time Chart -->
+                <div class="glass-panel p-4 rounded-xl flex-1 flex flex-col">
+                    <div class="flex justify-between items-center mb-2">
+                        <h4 class="text-sm text-gray-400 font-bold uppercase">Load History</h4>
+                        <span class="text-[10px] text-gold-500 bg-gold-900/20 px-2 py-0.5 rounded border border-gold-500/20">Live</span>
+                    </div>
+                    <div class="flex-1 w-full min-h-[150px] bg-black/20 rounded"><canvas id="performanceChart"></canvas></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Server Details Table -->
+        <div class="glass-panel rounded-xl overflow-hidden mt-6">
+            <div class="px-6 py-4 border-b border-dark-border flex justify-between items-center">
+                <h3 class="text-lg font-semibold text-white">Allocations & Network</h3>
+                <button class="text-xs bg-dark-700 hover:bg-dark-600 text-gold-500 px-3 py-1.5 rounded border border-dark-border transition-colors">Manage Ports</button>
+            </div>
+            <table class="w-full text-left">
+                <thead class="bg-dark-800 text-xs uppercase text-gray-500 font-bold">
+                    <tr>
+                        <th class="px-6 py-3">IP Address</th>
+                        <th class="px-6 py-3">Port</th>
+                        <th class="px-6 py-3">Type</th>
+                        <th class="px-6 py-3">Notes</th>
+                        <th class="px-6 py-3 text-right">Action</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-dark-border text-sm text-gray-300">
+                    <tr class="hover:bg-dark-700/30 transition-colors">
+                        <td class="px-6 py-4 font-mono"><%= instance.Node.address %></td>
+                        <td class="px-6 py-4 font-mono text-gold-500"><%= instance.Primary %></td>
+                        <td class="px-6 py-4"><span class="bg-purple-500/10 text-purple-400 px-2 py-0.5 rounded text-xs border border-purple-500/20">Primary</span></td>
+                        <td class="px-6 py-4 text-gray-500">Main Connection</td>
+                        <td class="px-6 py-4 text-right">
+                            <i class="fa-solid fa-copy text-gray-500 hover:text-white cursor-pointer mr-2"></i>
+                            <i class="fa-solid fa-pen-to-square text-gray-500 hover:text-gold-500 cursor-pointer"></i>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+</main>
+    <script>
+        const baseTheme = {
+            foreground: '#c5c9d1',
+            background: 'rgba(0 0 0 / 0)',
+            selection: '#5DA5D533',
+            black: '#1E1E1D',
+            brightBlack: '#262625',
+            red: '#E54B4B',
+            green: '#9ECE58',
+            yellow: '#FAED70',
+            blue: '#396FE2',
+            magenta: '#BB80B3',
+            cyan: '#2DDAFD',
+            white: '#d0d0d0',
+            brightBlack: 'rgba(255, 255, 255, 0.2)',
+            brightRed: '#FF5370',
+            brightGreen: '#C3E88D',
+            brightYellow: '#FFCB6B',
+            brightBlue: '#82AAFF',
+            brightMagenta: '#C792EA',
+            brightCyan: '#89DDFF',
+            brightWhite: '#ffffff',
+        };
+        
+        const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
+        const instanceId = '<%= req.params.id %>';
+        const maxCommands = 10;
+        let commandHistory = [];
+        let currentCommandIndex = -1;
+        let term;
+        let ws;
+        let uptimeInterval;
+        
+        function createBackgroundChart(canvasId, type = 'line') {
+            return new Chart(document.getElementById(canvasId).getContext('2d'), {
+                type: type,
+                data: {
+                    labels: [],
+                    datasets: [{
+                        data: [],
+                        borderColor: 'rgba(255, 215, 0, 0.5)',
+                        backgroundColor: 'rgba(255, 215, 0, 0.1)',
+                        borderWidth: 1,
+                        pointRadius: 0,
+                        fill: true,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { enabled: false }
+                    },
+                    scales: {
+                        x: { display: false },
+                        y: { 
+                            display: true,
+                            grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                            ticks: { color: 'rgba(255, 255, 255, 0.3)' }
+                        }
+                    },
+                    animation: false
+                }
+            });
+        }
+
+        const performanceChart = createBackgroundChart('performanceChart');
+        
+        function initWebSocket() {
+            const port = window.location.port ? `:${window.location.port}` : '';
+            ws = new WebSocket(`${protocol}://${window.location.hostname}${port}/console/${instanceId}`);
+            
+            ws.onopen = () => {
+                console.log('WebSocket connected!');
+                term.write('\x1b[32m[panel]\x1b[0m Connected to server console\r\n');
+            };
+            
+            ws.onmessage = handleWebSocketMessage;
+            
+            ws.onclose = () => {
+                console.log('WebSocket connection closed, attempting to reconnect...');
+                term.write('\x1b[31m[panel]\x1b[0m Connection lost. Attempting to reconnect...\r\n');
+                setTimeout(initWebSocket, 3000);
+            };
+            
+            ws.onerror = (error) => {
+                console.log('WebSocket encountered an error:', error, 'Attempting to reconnect...');
+                term.write('\x1b[31m[panel]\x1b[0m Connection error. Attempting to reconnect...\r\n');
+                setTimeout(initWebSocket, 5000);
+            };
+        }
+        
+        function handleWebSocketMessage(msg) {
+            const lines = msg.data.split('\n');
+            let isFirstLine = true;
+            let previousLineWasEmpty = false;
+        
+            lines.forEach(line => {
+                const trimmedLine = line.trim();
+                if (trimmedLine === '' && previousLineWasEmpty) return;
+                
+                if (!isFirstLine && !previousLineWasEmpty) {
+                    term.write('\r\n');
+                }
+        
+                term.write('\x1b[0m' + trimmedLine);
+        
+                if (trimmedLine.includes("Working on")) {
+                    term.write('\r\n\u001b[1m\u001b[33m[panel] \u001b[0mreconnecting socket, hold on...');
+                    term.clear();
+                    ws.close();
+                }
+                
+                if (trimmedLine.includes("dractyld instance appears to be down")) {
+                    ws.close();
+                    document.getElementById('daemonIsDown').classList.remove('hidden');
+                } else {
+                    document.getElementById('daemonIsDown').classList.add('hidden');
+                }
+        
+                isFirstLine = false;
+                previousLineWasEmpty = (trimmedLine === '');
+            });
+        }
+        
+        function setupTerminal() {
+            term = new Terminal({
+                disableStdin: false,
+                allowProposedApi: true,
+                lineHeight: 1.35,
+                rows: 19,
+                cols: 100,
+                fontFamily: 'Menlo, monospace',
+                theme: baseTheme,
+                allowTransparency: true,
+                fontSize: 12,
+            });
+            term.open(document.getElementById('terminal'));
+            
+            // Set up terminal input handling
+            term.onData(data => {
+                if (data === '\r') {
+                    sendCommand();
+                } else if (data === '\u007F') {
+                    // Backspace
+                    term.write('\b \b');
+                } else if (data === '\u001b[A') {
+                    // Up arrow
+                    if (currentCommandIndex > 0) {
+                        currentCommandIndex--;
+                        const command = commandHistory[currentCommandIndex];
+                        term.write('\r\x1b[K' + command);
+                    }
+                } else if (data === '\u001b[B') {
+                    // Down arrow
+                    if (currentCommandIndex < commandHistory.length - 1) {
+                        currentCommandIndex++;
+                        const command = commandHistory[currentCommandIndex];
+                        term.write('\r\x1b[K' + command);
+                    } else {
+                        currentCommandIndex = commandHistory.length;
+                        term.write('\r\x1b[K');
+                    }
+                } else {
+                    term.write(data);
+                }
+            });
+        }
+        
+        function sendCommand() {
+            // Get the current line from the terminal
+            const command = term._core.buffer.x > 0 ? 
+                term._core.buffer.lines.get(term._core.buffer.y).translateToString(true).trim() : '';
+            
+            if (command && ws) {
+                term.write('\r\n');
+                ws.send(JSON.stringify({
+                    event: 'cmd',
+                    command: command,
+                    containerId: instanceId
+                }));
+        
+                if (commandHistory.length === maxCommands) {
+                    commandHistory.shift();
+                }
+                commandHistory.push(command);
+                currentCommandIndex = commandHistory.length;
+            }
+        }
+        
+        document.addEventListener('DOMContentLoaded', function () {
+            setupTerminal();
+            initWebSocket();
+        
+            // Set up the send button
+            document.getElementById('sendButton').addEventListener('click', function() {
+                sendCommand();
+            });
+        
+            // Set up power action buttons
+            ['start', 'stop', 'restart'].forEach(action => {
+                document.getElementById(`${action}Button`).addEventListener('click', function () {
+                    if (ws) {
+                        ws.send(JSON.stringify({
+                            event: `power:${action}`,
+                            containerId: instanceId
+                        }));
+                        
+                        // Show feedback to the user
+                        term.write(`\r\n\x1b[33m[panel]\x1b[0m Sending ${action} command...\r\n`);
+                    }
+                });
+            });
+        
+            // Initialize stats WebSocket
+            initStatsWebSocket();
+            
+            // Start uptime counter
+            startUptimeCounter();
+        });
+
+        function isValidJson(str) {
+            try {
+              JSON.parse(str);
+            } catch (e) {
+              return false;
+            }
+            return true;
+        }
+        
+        function initStatsWebSocket() {
+            const statsWs = new WebSocket(`${protocol}://${window.location.hostname}:${window.location.port}/stats/${instanceId}`);
+            
+            statsWs.onmessage = event => {
+                if (isValidJson(event.data)) {
+                    const stats = JSON.parse(event.data);
+                    if (stats.error) {
+                        console.error('Error fetching stats:', stats.error);
+                        return;
+                    }
+        
+                    updateRamUsage(stats);
+                    updateCpuUsage(stats);
+                    updateDiskUsage(stats);
+                    updateStatus(stats);
+                    updatePerformanceChart(stats);
+                } else {
+                    console.log('Received non-JSON data:', event.data);
+                }
+            };
+
+            statsWs.onclose = () => {
+                console.log('WebSocket Stats connection closed, attempting to reconnect...');
+                setTimeout(initStatsWebSocket, 3000);
+            };
+        }
+        
+        function formatBytes(bytes, decimals = 2) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const dm = decimals < 0 ? 0 : decimals;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+        }
+        
+        function updateRamUsage(stats) {
+            const ramStatsUsage = stats.memory_stats.usage || 0;
+            const ramStatsLimit = stats.memory_stats.limit || 0;
+
+            const ramUsageRaw = ramStatsUsage / 1024 / 1024 || 0;
+            const ramLimitRaw = ramStatsLimit / 1024 / 1024 || <%= instance.Memory %>;
+            const ramUsagePercent = (ramLimitRaw > 0) ? ((ramUsageRaw / ramLimitRaw) * 100).toFixed(2) : '0.00';
+            
+            document.getElementById('ramUsage').textContent = `${ramUsagePercent}% (${formatBytes(ramStatsUsage)} / ${formatBytes(ramStatsLimit)})`;
+        }
+        
+        function updateCpuUsage(stats) {
+            const cpuDelta = stats.cpu_stats.cpu_usage.total_usage - stats.precpu_stats.cpu_usage.total_usage;
+            const systemCpuDelta = stats.cpu_stats.system_cpu_usage - stats.precpu_stats.system_cpu_usage;
+            let cpuUsagePercent = ((cpuDelta / systemCpuDelta) * 100).toFixed(2);
+        
+            if (isNaN(cpuUsagePercent)) {
+                cpuUsagePercent = 0;
+            }
+        
+            document.getElementById('cpuUsage').textContent = `${cpuUsagePercent}%`;
+        }
+        
+        function updateDiskUsage(stats) {
+            const diskUsageRaw = parseFloat(stats.volumeSize);
+            const diskLimitRaw = 10 * 1024; // Assuming 10GB limit
+            const diskUsagePercent = (diskUsageRaw / diskLimitRaw * 100).toFixed(2);
+            document.getElementById('diskUsage').textContent = `${diskUsagePercent}% (${formatBytes(diskUsageRaw * 1024 * 1024)} / ${formatBytes(diskLimitRaw * 1024 * 1024)})`;
+        }
+        
+        function updateStatus(stats) {
+            const statusElement = document.getElementById('status');
+            const ramUsageRaw = stats.memory_stats.usage / 1024 / 1024 || 0;
+            
+            if (ramUsageRaw > 1) {
+                statusElement.textContent = 'Currently Online';
+                statusElement.className = 'text-xs text-green-400 mt-1';
+            } else {
+                statusElement.textContent = 'Currently Offline';
+                statusElement.className = 'text-xs text-red-400 mt-1';
+            }
+        }
+        
+        function updatePerformanceChart(stats) {
+            const cpuDelta = stats.cpu_stats.cpu_usage.total_usage - stats.precpu_stats.cpu_usage.total_usage;
+            const systemCpuDelta = stats.cpu_stats.system_cpu_usage - stats.precpu_stats.system_cpu_usage;
+            let cpuUsagePercent = ((cpuDelta / systemCpuDelta) * 100).toFixed(2);
+            
+            if (isNaN(cpuUsagePercent)) {
+                cpuUsagePercent = 0;
+            }
+            
+            // Add the new data point to the chart
+            performanceChart.data.labels.push('');
+            performanceChart.data.datasets[0].data.push(cpuUsagePercent);
+            
+            // Keep only the last 20 data points
+            if (performanceChart.data.labels.length > 20) {
+                performanceChart.data.labels.shift();
+                performanceChart.data.datasets[0].data.shift();
+            }
+            
+            performanceChart.update();
+        }
+        
+        function startUptimeCounter() {
+            // Start with a default uptime
+            let uptimeSeconds = 378000; // 4 days and 10.5 hours in seconds
+            
+            uptimeInterval = setInterval(() => {
+                uptimeSeconds++;
+                
+                const days = Math.floor(uptimeSeconds / 86400);
+                const hours = Math.floor((uptimeSeconds % 86400) / 3600);
+                const minutes = Math.floor((uptimeSeconds % 3600) / 60);
+                
+                let uptimeString = '';
+                if (days > 0) uptimeString += `${days}d `;
+                if (hours > 0) uptimeString += `${hours}h `;
+                if (minutes > 0) uptimeString += `${minutes}m`;
+                
+                document.getElementById('uptime').textContent = uptimeString || '0m';
+            }, 60000); // Update every minute
+        }
+    </script>
+<%- include('../components/footer') %>

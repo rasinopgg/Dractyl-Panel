@@ -1,0 +1,161 @@
+<%- include('../components/template') %>
+    <!-- Desktop Container Restriction -->
+    <div class="w-[1440px] mx-auto" id="content">
+
+    <!-- Header -->
+    <header class="h-20 flex items-center justify-between px-8 sticky top-0 z-10 backdrop-blur-md bg-dark-900/80 border-b border-gold-600/10">
+        <!-- Breadcrumbs -->
+        <div class="flex items-center text-sm text-gray-400">
+            <span class="text-gold-500 font-medium">Dashboard</span>
+            <span class="mx-2 text-gray-600">/</span>
+            <span class="text-white font-medium">Admin Overview</span>
+        </div>
+
+        <!-- Right Actions -->
+        <div class="flex items-center gap-6">
+            <div class="relative cursor-pointer">
+                <i class="fa-regular fa-bell text-gray-400 hover:text-gold-500 transition-colors"></i>
+                <span class="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+            </div>
+
+            <div class="flex items-center gap-3 pl-6 border-l border-dark-border/50">
+                <div class="text-right hidden sm:block">
+                    <div class="text-sm font-medium text-white"><%= user.username %></div>
+                    <div class="text-xs text-gold-500">Administrator</div>
+                </div>
+                <img class="w-9 h-9 rounded-full border border-gold-500/50" src="https://api.dicebear.com/9.x/thumbs/svg?seed=<%= user.username %>" alt="Avatar">
+            </div>
+        </div>
+    </header>
+
+    <!-- Admin Dashboard Content -->
+    <div class="p-8 space-y-6">
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <!-- Users Card -->
+            <div class="glass-panel p-6 rounded-xl hover:border-gold-500/40 transition-all">
+                <div class="flex items-start justify-between mb-4">
+                    <div class="w-12 h-12 rounded-xl bg-blue-500/10 flex items-center justify-center border border-blue-500/20">
+                        <i class="fa-solid fa-users text-blue-500"></i>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-3xl font-bold text-white"><%= usersTotal %></div>
+                        <div class="text-sm text-gray-400">Total Users</div>
+                    </div>
+                </div>
+                <div class="text-sm text-gray-500">
+                    <i class="fa-solid fa-user-plus text-green-400 mr-1"></i>
+                    Active accounts on the platform
+                </div>
+            </div>
+
+            <!-- Instances Card -->
+            <div class="glass-panel p-6 rounded-xl hover:border-gold-500/40 transition-all">
+                <div class="flex items-start justify-between mb-4">
+                    <div class="w-12 h-12 rounded-xl bg-green-500/10 flex items-center justify-center border border-green-500/20">
+                        <i class="fa-solid fa-server text-green-500"></i>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-3xl font-bold text-white"><%= instancesTotal %></div>
+                        <div class="text-sm text-gray-400">Server Instances</div>
+                    </div>
+                </div>
+                <div class="text-sm text-gray-500">
+                    <i class="fa-solid fa-gamepad text-blue-400 mr-1"></i>
+                    Active Minecraft servers
+                </div>
+            </div>
+
+            <!-- Nodes Card -->
+            <div class="glass-panel p-6 rounded-xl hover:border-gold-500/40 transition-all">
+                <div class="flex items-start justify-between mb-4">
+                    <div class="w-12 h-12 rounded-xl bg-purple-500/10 flex items-center justify-center border border-purple-500/20">
+                        <i class="fa-solid fa-network-wired text-purple-500"></i>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-3xl font-bold text-white"><%= nodesTotal %></div>
+                        <div class="text-sm text-gray-400">Cluster Nodes</div>
+                    </div>
+                </div>
+                <div class="text-sm text-gray-500">
+                    <i class="fa-solid fa-globe text-yellow-400 mr-1"></i>
+                    Distributed server locations
+                </div>
+            </div>
+
+            <!-- Images Card -->
+            <div class="glass-panel p-6 rounded-xl hover:border-gold-500/40 transition-all">
+                <div class="flex items-start justify-between mb-4">
+                    <div class="w-12 h-12 rounded-xl bg-red-500/10 flex items-center justify-center border border-red-500/20">
+                        <i class="fa-solid fa-images text-red-500"></i>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-3xl font-bold text-white"><%= imagesTotal %></div>
+                        <div class="text-sm text-gray-400">Docker Images</div>
+                    </div>
+                </div>
+                <div class="text-sm text-gray-500">
+                    <i class="fa-brands fa-docker text-blue-400 mr-1"></i>
+                    Available server templates
+                </div>
+            </div>
+        </div>
+
+        <!-- System Information Panel -->
+        <div class="glass-panel rounded-xl p-6">
+            <div class="flex items-center gap-4 mb-6">
+                <div class="w-12 h-12 rounded-xl bg-gold-500/10 flex items-center justify-center border border-gold-500/20">
+                    <i class="fa-solid fa-shield-alt text-gold-500"></i>
+                </div>
+                <div>
+                    <h2 class="text-xl font-bold text-white">Drayctyl Panel</h2>
+                    <p class="text-sm text-gray-400">Admin Control Center</p>
+                </div>
+            </div>
+
+
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="space-y-4">
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm text-gray-400">Panel Version:</span>
+                        <span class="text-sm font-mono text-white">v1.0</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm text-gray-400">Status:</span>
+                        <span class="text-sm text-green-400">Online</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm text-gray-400">Uptime:</span>
+                        <span class="text-sm font-mono text-white">Today, 7:41 AM</span>
+                    </div>
+                </div>
+
+                <div class="space-y-4 flex flex-col justify-center">
+                    <p class="text-sm text-gray-400 leading-relaxed">
+                        Welcome to Drayctyl Panel v1.0. Your Minecraft hosting platform is running smoothly with <strong class="text-green-400"><%= instancesTotal %></strong> active servers and <strong class="text-blue-400"><%= usersTotal %></strong> registered users.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Attributions -->
+        <div class="glass-panel p-8 rounded-xl text-center">
+            <div class="space-y-4">
+                <div>
+                    <h2 class="text-2xl font-bold text-gold-500 mb-2">Drayctyl Panel</h2>
+                    <p class="text-lg text-gray-300">Made by MrDraynoX</p>
+                </div>
+                <div class="pt-4">
+                    <p class="text-sm text-gray-400 max-w-md mx-auto">
+                        This panel is developed and maintained by MrDraynoX.
+                        Thank you for using Drayctyl Panel v1.0.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+       </div>
+    </div>
+</main>
+<%- include('../components/footer') %>
